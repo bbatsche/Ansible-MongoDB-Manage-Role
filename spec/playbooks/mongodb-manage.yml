@@ -1,0 +1,6 @@
+---
+- hosts: all
+  roles:
+    - bbatsche.MongoDB-Install
+  tasks:
+    - include: ../../tasks/main.yml
