@@ -1,31 +1,42 @@
-Role Name
-=========
+Ansible Manage MongoDB Role
+===========================
 
-A brief description of the role goes here.
+[![Build Status](https://travis-ci.org/bbatsche/Ansible-MongoDB-Manage-Role.svg?branch=master)](https://travis-ci.org/bbatsche/Ansible-MongoDB-Manage-Role)
 
-Requirements
-------------
-
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+This is a simple role for just creating users in MongoDB. It can either create users for a single database or for the server as a whole.
 
 Role Variables
 --------------
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+- `mongodb_admin` &mdash; MongoDB admin username. Default: "vagrant"
+- `mongodb_pass` &mdash; Password for admin user. Default: "vagrant"
+- `new_mongodb_user` &mdash; New MongoDB user to be created
+- `new_mongodb_pass` &mdash; Password for new MongoDB user
+- `db_name` &mdash; Database new user belongs to. Default: "admin"
+- `mongodb_roles` &mdash; Comma separated list of roles to be assigned to the user
 
 Dependencies
 ------------
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+This role depends on `bbatsche.MongoDB-Install`. You must install that role first using:
+
+```bash
+ansible-galaxy install bbatsche.MongoDB-Install
+```
 
 Example Playbook
 ----------------
 
 Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
 
-    - hosts: servers
-      roles:
-         - { role: bbatsche.rolename, x: 42 }
+```yml
+- hosts: servers
+  roles:
+  - role: bbatsche.MongoDB-Manage
+    new_mongodb_user: mongo_user
+    new_mongodb_pass: secretPassword
+    roles: dbOwner
+```
 
 License
 -------
@@ -59,8 +70,3 @@ There are several rake tasks for interacting with the test environment, includin
 - `rake vagrant[cmd]` &mdash; Run some arbitrary Vagrant command in the test environment. For example, to log in to the test environment run: `rake vagrant[ssh]`
 
 These specs are **not** meant to test for idempotence. They are meant to check that the specified tasks perform their expected steps. Idempotency can be tested independently as a form of integration testing.
-
-Author Information
-------------------
-
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
