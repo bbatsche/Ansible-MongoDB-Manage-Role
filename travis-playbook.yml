@@ -3,9 +3,12 @@
   remote_user: root
   become: yes
 
-  vars_files:
-    - defaults/main.yml
+  vars:
+    new_mongodb_user: test_user
+    new_mongodb_pass: password
+    mongodb_roles:    root
+
+  roles:
+    - bbatsche.MongoDB-Install
   tasks:
     - include: tasks/main.yml
-  handlers:
-    - include: handlers/main.yml
