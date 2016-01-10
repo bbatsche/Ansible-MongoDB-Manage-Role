@@ -6,7 +6,6 @@
   vars:
     new_mongodb_user: test_user
     new_mongodb_pass: password
-    mongodb_roles:    root
 
   roles:
     - bbatsche.MongoDB-Install

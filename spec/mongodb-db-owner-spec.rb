@@ -5,7 +5,6 @@ RSpec.configure do |config|
     SpecHelper.instance.provision('playbooks/mongodb-manage.yml', {
       new_mongodb_user: 'db_owner',
       new_mongodb_pass: 'password',
-      mongodb_roles:    'dbOwner',
       db_name:          'test_db'
     })
   end

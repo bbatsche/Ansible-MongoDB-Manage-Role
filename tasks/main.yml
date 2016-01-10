@@ -7,4 +7,4 @@
     login_password: "{{ mongodb_pass }}"
     database:       "{{ db_name | default('admin') }}"
     state:          present
-    roles:          "{{ mongodb_roles }}"
+    roles:          "{{ 'root,backup,restore' if db_name|default('admin') == 'admin' else 'dbOwner' }}"

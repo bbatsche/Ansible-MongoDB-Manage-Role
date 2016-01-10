@@ -5,6 +5,8 @@ Ansible Manage MongoDB Role
 
 This is a simple role for just creating users in MongoDB. It can either create users for a single database or for the server as a whole.
 
+New users are assigned database roles automatically based on the `db_name`. If `db_name` is omitted, or is "admin", the user will be given the roles `root`, `backup`, and `restore`. If the `db_name` has a value other than "admin", the user will be given the role `dbOwner`.
+
 Role Variables
 --------------
 
@@ -13,7 +15,6 @@ Role Variables
 - `new_mongodb_user` &mdash; New MongoDB user to be created
 - `new_mongodb_pass` &mdash; Password for new MongoDB user
 - `db_name` &mdash; Database new user belongs to. Default: "admin"
-- `mongodb_roles` &mdash; Comma separated list of roles to be assigned to the user
 
 Dependencies
 ------------
@@ -27,15 +28,12 @@ ansible-galaxy install bbatsche.MongoDB-Install
 Example Playbook
 ----------------
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
-
 ```yml
 - hosts: servers
   roles:
   - role: bbatsche.MongoDB-Manage
     new_mongodb_user: mongo_user
     new_mongodb_pass: secretPassword
-    roles: dbOwner
 ```
 
 License

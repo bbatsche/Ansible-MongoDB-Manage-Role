@@ -4,8 +4,7 @@ RSpec.configure do |config|
   config.before :suite do
     SpecHelper.instance.provision('playbooks/mongodb-manage.yml', {
       new_mongodb_user: 'root_user',
-      new_mongodb_pass: 'password',
-      mongodb_roles:    'root'
+      new_mongodb_pass: 'password'
     })
   end
 end

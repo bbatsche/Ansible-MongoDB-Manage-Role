@@ -4,6 +4,10 @@ dist: trusty
 
 language: generic
 
+env:
+  - DB_NAME=test_db
+  - DB_NAME=admin
+
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq python-apt python-pycurl
@@ -17,11 +21,11 @@ script:
   - ansible-playbook -i inventory travis-playbook.yml --syntax-check
 
   # Play test
-  - ansible-playbook -i inventory travis-playbook.yml --connection=local
+  - ansible-playbook -i inventory travis-playbook.yml --connection=local -e "db_name=$DB_NAME"
 
   # Idempotence test
   - >
-    ansible-playbook -i inventory travis-playbook.yml --connection=local
+    ansible-playbook -i inventory travis-playbook.yml --connection=local -e "db_name=$DB_NAME"
     | grep -q 'changed=0.*failed=0'
     && (echo 'Idempotence test: pass' && exit 0)
     || (echo 'Idempotence test: fail' && exit 1)
