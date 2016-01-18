@@ -2,6 +2,7 @@ Ansible Manage MongoDB Role
 ===========================
 
 [![Build Status](https://travis-ci.org/bbatsche/Ansible-MongoDB-Manage-Role.svg?branch=master)](https://travis-ci.org/bbatsche/Ansible-MongoDB-Manage-Role)
+[![Ansible Galaxy](https://img.shields.io/ansible/role/6847.svg)](https://galaxy.ansible.com/detail#/role/6847)
 
 This is a simple role for just creating users in MongoDB. It can either create users for a single database or for the server as a whole.
 
