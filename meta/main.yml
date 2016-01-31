@@ -8,8 +8,9 @@ galaxy_info:
   - name: Ubuntu
     versions:
     - trusty
-  categories:
+  galaxy_tags:
   - database
-  - "database:nosql"
+  - nosql
+  - mongodb
 dependencies:
   - bbatsche.MongoDB-Install
