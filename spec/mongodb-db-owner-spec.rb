@@ -1,11 +1,12 @@
-require_relative 'spec_helper'
+require_relative "lib/ansible_helper"
+require_relative "bootstrap"
 
 RSpec.configure do |config|
   config.before :suite do
-    SpecHelper.instance.provision('playbooks/mongodb-manage.yml', {
-      new_mongodb_user: 'db_owner',
-      new_mongodb_pass: 'password',
-      db_name:          'test_db'
+    AnsibleHelper.instance.playbook("playbooks/mongodb-manage.yml", {
+      new_mongodb_user: "db_owner",
+      new_mongodb_pass: "password",
+      db_name:          "test_db"
     })
   end
 end
