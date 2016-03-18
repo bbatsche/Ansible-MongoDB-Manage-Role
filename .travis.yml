@@ -5,13 +5,16 @@ dist: trusty
 language: generic
 
 env:
-  - DB_NAME=test_db
-  - DB_NAME=admin
+  - ANSIBLE_VERSION="1.9" DB_NAME=test_db
+  - ANSIBLE_VERSION="2.0" DB_NAME=admin
+  - ANSIBLE_VERSION="1.9" DB_NAME=test_db
+  - ANSIBLE_VERSION="2.0" DB_NAME=admin
 
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq python-apt python-pycurl
 install:
+  - sudo pip install "ansible~=$ANSIBLE_VERSION"
   - sudo pip install "ansible~=1.9"
   - sudo ansible-galaxy install bbatsche.MongoDB-Install
 script:
