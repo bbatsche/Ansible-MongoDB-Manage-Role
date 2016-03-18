@@ -6,8 +6,8 @@ language: generic
 
 env:
   - ANSIBLE_VERSION="1.9" DB_NAME=test_db
-  - ANSIBLE_VERSION="2.0" DB_NAME=admin
-  - ANSIBLE_VERSION="1.9" DB_NAME=test_db
+  - ANSIBLE_VERSION="2.0" DB_NAME=test_db
+  - ANSIBLE_VERSION="1.9" DB_NAME=admin
   - ANSIBLE_VERSION="2.0" DB_NAME=admin
 
 before_install:
