@@ -4,8 +4,8 @@ require_relative "bootstrap"
 RSpec.configure do |config|
   config.before :suite do
     AnsibleHelper.instance.playbook("playbooks/mongodb-manage.yml", {
-      new_mongodb_user: "root_user",
-      new_mongodb_pass: "password"
+      new_db_user: "root_user",
+      new_db_pass: "password"
     })
   end
 end

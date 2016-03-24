@@ -11,10 +11,10 @@ New users are assigned database roles automatically based on the `db_name`. If `
 Role Variables
 --------------
 
-- `mongodb_admin` &mdash; MongoDB admin username. Default: "vagrant"
-- `mongodb_pass` &mdash; Password for admin user. Default: "vagrant"
-- `new_mongodb_user` &mdash; New MongoDB user to be created
-- `new_mongodb_pass` &mdash; Password for new MongoDB user
+- `db_admin` &mdash; MongoDB admin username. Default: "vagrant"
+- `db_pass` &mdash; Password for admin user. Default: "vagrant"
+- `new_db_user` &mdash; New MongoDB user to be created
+- `new_db_pass` &mdash; Password for new MongoDB user
 - `db_name` &mdash; Database new user belongs to. Default: "admin"
 
 Dependencies
@@ -33,8 +33,8 @@ Example Playbook
 - hosts: servers
   roles:
   - role: bbatsche.MongoDB-Manage
-    new_mongodb_user: mongo_user
-    new_mongodb_pass: secretPassword
+    new_db_user: mongo_user
+    new_db_pass: secretPassword
 ```
 
 License
