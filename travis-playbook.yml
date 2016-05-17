@@ -1,7 +1,5 @@
 ---
 - hosts: all
-  remote_user: root
-  become: yes
 
   vars:
     new_db_user: test_user
