@@ -6,7 +6,7 @@ RSpec.configure do |config|
     AnsibleHelper.instance.playbook("playbooks/mongodb-manage.yml", {
       new_db_user: "db_owner",
       new_db_pass: "password",
-      db_name:          "test_db"
+      db_name:     "test_db"
     })
   end
 end

@@ -1,11 +1,12 @@
 ---
 - hosts: all
 
+  vars_files:
+    - defaults/main.yml
+
   vars:
     new_db_user: test_user
     new_db_pass: password
 
-  roles:
-    - bbatsche.MongoDB-Install
   tasks:
     - include: tasks/main.yml
