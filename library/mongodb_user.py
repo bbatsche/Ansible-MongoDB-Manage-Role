@@ -164,64 +164,117 @@ else:
 # MongoDB module specific support methods.
 #
 
-def check_compatibility(module, client):
-    srv_info = client.server_info()
-    if LooseVersion(srv_info['version']) >= LooseVersion('3.2') and LooseVersion(PyMongoVersion) <= LooseVersion('3.2'):
-        module.fail_json(msg=' (Note: you must use pymongo 3.2+ with MongoDB >= 3.2)')
-    elif LooseVersion(srv_info['version']) >= LooseVersion('3.0') and LooseVersion(PyMongoVersion) <= LooseVersion('2.8'):
-        module.fail_json(msg=' (Note: you must use pymongo 2.8+ with MongoDB 3.0)')
-    elif LooseVersion(srv_info['version']) >= LooseVersion('2.6') and LooseVersion(PyMongoVersion) <= LooseVersion('2.7'):
-        module.fail_json(msg=' (Note: you must use pymongo 2.7+ with MongoDB 2.6)')
-    elif LooseVersion(PyMongoVersion) <= LooseVersion('2.5'):
-        module.fail_json(msg=' (Note: you must be on mongodb 2.4+ and pymongo 2.5+ to use the roles param)')
 
-def user_find(client, user, db_name):
-    for mongo_user in client["admin"].system.users.find():
-        if mongo_user['user'] == user and mongo_user['db'] == db_name:
-            return mongo_user
-    return False
+class MongoUser(object):
+    def __init__(self, module):
+        self.module = module
 
-def user_add(module, client, db_name, user, password, roles):
-    if module.check_mode:
-        module.exit_json(changed=True, user=user)
+        self.login_user     = module.params['login_user']
+        self.login_password = module.params['login_password']
+        self.login_host     = module.params['login_host']
+        self.login_port     = int(module.params['login_port'])
+        self.login_database = module.params['login_database']
 
-    #pymongo's user_add is a _create_or_update_user so we won't know if it was changed or updated
-    #without reproducing a lot of the logic in database.py of pymongo
-    db = client[db_name]
+        self.replica_set = module.params['replica_set']
+        self.ssl         = module.params['ssl']
 
-    try:
-        if roles is None:
-            db.add_user(user, password, False)
+        self.database = module.params['database']
+
+        self.client = self.get_client()
+
+        if self.login_user is None and self.login_password is None:
+            if not self.load_mongocnf() and LooseVersion(PyMongoVersion) >= LooseVersion('3.0') and self.database != "admin":
+               module.fail_json(msg='The localhost login exception only allows the first admin account to be created')
+        elif self.login_password is None or self.login_user is None:
+            module.fail_json(msg='when supplying login arguments, both login_user and login_password must be provided')
+
+        if not self.localhost_exception():
+            self.client.admin.authenticate(self.login_user, self.login_password, source=self.login_database)
+
+        self.check_compatibility()
+
+    def get_client(self):
+        if self.replica_set:
+            return MongoClient(self.login_host, self.login_port, replicaset=self.replica_set, ssl=self.ssl)
         else:
-            db.add_user(user, password, None, roles=roles)
-    except OperationFailure, e:
-        err_msg = str(e)
-        module.fail_json(msg='Unable to add or update user: %s' % err_msg)
+            return MongoClient(self.login_host, self.login_port, ssl=self.ssl)
 
-def user_remove(module, client, db_name, user):
-    exists = user_find(client, user, db_name)
-    if exists:
-        if module.check_mode:
-            module.exit_json(changed=True, user=user)
-        db = client[db_name]
-        db.remove_user(user)
-    else:
-        module.exit_json(changed=False, user=user)
+    def load_mongocnf(self):
+        config   = ConfigParser.RawConfigParser()
+        mongocnf = os.path.expanduser('~/.mongodb.cnf')
 
-def load_mongocnf():
-    config = ConfigParser.RawConfigParser()
-    mongocnf = os.path.expanduser('~/.mongodb.cnf')
+        try:
+            config.readfp(open(mongocnf))
 
-    try:
-        config.readfp(open(mongocnf))
-        creds = dict(
-          user=config.get('client', 'user'),
-          password=config.get('client', 'pass')
-        )
-    except (ConfigParser.NoOptionError, IOError):
+            self.login_user     = config.get('client', 'user')
+            self.login_password = config.get('client', 'pass')
+        except (ConfigParser.NoOptionError, IOError):
+            return False
+
+        return True
+
+    def check_compatibility(self):
+        srv_info = self.client.server_info()
+
+        if LooseVersion(srv_info['version']) >= LooseVersion('3.2') and LooseVersion(PyMongoVersion) <= LooseVersion('3.2'):
+            self.module.fail_json(msg=' (Note: you must use pymongo 3.2+ with MongoDB >= 3.2)')
+        elif LooseVersion(srv_info['version']) >= LooseVersion('3.0') and LooseVersion(PyMongoVersion) <= LooseVersion('2.8'):
+            self.module.fail_json(msg=' (Note: you must use pymongo 2.8+ with MongoDB 3.0)')
+        elif LooseVersion(srv_info['version']) >= LooseVersion('2.6') and LooseVersion(PyMongoVersion) <= LooseVersion('2.7'):
+            self.module.fail_json(msg=' (Note: you must use pymongo 2.7+ with MongoDB 2.6)')
+        elif LooseVersion(PyMongoVersion) <= LooseVersion('2.5'):
+            self.module.fail_json(msg=' (Note: you must be on mongodb 2.4+ and pymongo 2.5+ to use the roles param)')
+
+    def localhost_exception(self):
+        return self.login_user is None and self.login_password is None \
+            and LooseVersion(PyMongoVersion) >= LooseVersion('3.0') and self.database == "admin"
+
+    def add(self, user, password, roles):
+        if self.module.check_mode:
+            self.module.exit_json(changed=True, user=user)
+
+        db = self.client[self.database]
+
+        try:
+            if roles is None:
+                db.add_user(user, password, False)
+            else:
+                db.add_user(user, password, None, roles=roles)
+        except OperationFailure as e:
+            self.module.fail_json(msg='Unable to add or update user: %s' % str(e))
+
+    def find(self, user):
+        for mongo_user in self.client["admin"].system.users.find():
+            if mongo_user['user'] == user and mongo_user['db'] == self.database:
+                return mongo_user
         return False
 
-    return creds
+    def update(self, uinfo, user, password, roles):
+        if roles_changed(uinfo, roles, self.database):
+            self.add(user, password, roles)
+        else:
+            test_client = self.get_client()
+
+            db = test_client[self.database]
+
+            try:
+                db.authenticate(user, password)
+
+                self.module.exit_json(changed=False, user=user)
+            except OperationFailure:
+                # If we get an operation failure, assume authentication failed, meaning we need to change the password
+                # This is...so not good practice, but it's a way to get idempotence from our task
+                self.add(user, password, roles)
+
+    def user_remove(self, user):
+        if self.find(user):
+            if self.module.check_mode:
+                self.module.exit_json(changed=True, user=user)
+            db = self.client[self.database]
+
+            db.remove_user(user)
+        else:
+            self.module.exit_json(changed=False, user=user)
 
 # We must be aware of users which can read the oplog on a replicaset
 # Such users must have access to the local DB, but since this DB does not store users credentials
@@ -254,13 +307,6 @@ def roles_changed(uinfo, roles, db_name):
         return False
     return True
 
-def get_client(login_host, login_port, replica_set, ssl):
-    if replica_set:
-        return MongoClient(login_host, login_port, replicaset=replica_set, ssl=ssl)
-    else:
-        return MongoClient(login_host, login_port, ssl=ssl)
-
-
 # =========================================
 # Module execution.
 #
@@ -287,74 +333,35 @@ def main():
     if not pymongo_found:
         module.fail_json(msg='the python pymongo module is required')
 
-    login_user = module.params['login_user']
-    login_password = module.params['login_password']
-    login_host = module.params['login_host']
-    login_port = module.params['login_port']
-    login_database = module.params['login_database']
-
-    replica_set = module.params['replica_set']
-    db_name = module.params['database']
-    user = module.params['name']
-    password = module.params['password']
-    ssl = module.params['ssl']
-    roles = module.params['roles']
-    state = module.params['state']
-
     try:
-        client = get_client(login_host, int(login_port), replica_set, ssl)
-
-        if login_user is None and login_password is None:
-            mongocnf_creds = load_mongocnf()
-            if mongocnf_creds is not False:
-                login_user = mongocnf_creds['user']
-                login_password = mongocnf_creds['password']
-        elif login_password is None or login_user is None:
-            module.fail_json(msg='when supplying login arguments, both login_user and login_password must be provided')
-
-        if login_user is not None and login_password is not None:
-            client.admin.authenticate(login_user, login_password, source=login_database)
-        elif LooseVersion(PyMongoVersion) >= LooseVersion('3.0'):
-            if db_name != "admin":
-                module.fail_json(msg='The localhost login exception only allows the first admin account to be created')
-            #else: this has to be the first admin user added
-
-    except ConnectionFailure, e:
+        mongo_user = MongoUser(module)
+    except ConnectionFailure as e:
         module.fail_json(msg='unable to connect to database: %s' % str(e))
 
-    check_compatibility(module, client)
+    state = module.params['state']
+
+    user     = module.params['name']
+    password = module.params['password']
+    roles    = module.params['roles']
 
     if state == 'present':
         if password is None:
             module.fail_json(msg='password parameter required when adding a user')
 
-        uinfo = user_find(client, user, db_name)
-
-        if uinfo:
-            if roles_changed(uinfo, roles, db_name):
-                user_add(module, client, db_name, user, password, roles)
-            else:
-                test_client = get_client(login_host, int(login_port), replica_set, ssl)
-
-                db = test_client[db_name]
-
-                try:
-                    db.authenticate(user, password)
-
-                    module.exit_json(changed=False, user=user)
-                except OperationFailure:
-                    # If we get an operation failure, assume authentication failed, meaning we need to change the password
-                    # This is...so not good practice, but it's a way to get idempotence from our task
-                    user_add(module, client, db_name, user, password, roles)
-
+        if mongo_user.localhost_exception():
+            mongo_user.add(user, password, roles)
         else:
-            user_add(module, client, db_name, user, password, roles)
+            uinfo = mongo_user.find(user)
 
+            if uinfo:
+                mongo_user.update(uinfo, user, password, roles)
+            else:
+                mongo_user.add(user, password, roles)
 
     elif state == 'absent':
         try:
-            user_remove(module, client, db_name, user)
-        except OperationFailure, e:
+            mongo_user.remove(user)
+        except OperationFailure as e:
             module.fail_json(msg='Unable to remove user: %s' % str(e))
 
     module.exit_json(changed=True, user=user)
