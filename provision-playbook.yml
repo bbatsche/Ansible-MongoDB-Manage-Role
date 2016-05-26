@@ -3,7 +3,6 @@
 
   roles:
     - bbatsche.Base
-    - bbatsche.MongoDB-Install
 
   tasks:
   - name: Always Expand Bash Aliases

@@ -1,6 +1,6 @@
 ---
 - name: Create User
-  mongodb_user:
+  bebat_mongodb_user:
     name:           "{{ new_db_user}}"
     password:       "{{ new_db_pass }}"
     login_user:     "{{ db_admin }}"
